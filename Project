@@ -1,0 +1,34 @@
+select ad_date, campaign_id
+from facebook_ads_basic_daily fabd 
+;
+
+select ad_date, -- data sampling for further processing
+      campaign_id,
+      sum(spend)  as gen_spend,
+      sum(impressions) as nbr_of_imp,
+      sum(clicks) as nbr_clicks,
+      sum(value) as value_overall
+from public.facebook_ads_basic_daily fabd 
+where ad_date is not null 
+group by ad_date, campaign_id
+;
+
+select ad_date, -- creating metrics
+      campaign_id,
+      sum(spend)::numeric / sum(clicks)  as cpc,
+      sum(spend) ::numeric /sum(impressions)*1000 as cpm,
+      sum(clicks)::numeric/ sum(impressions)*100 as cpr,
+      sum(value) ::numeric/sum(spend) as romi 
+ from public.facebook_ads_basic_daily fabd 
+ where spend > 0  and clicks > 0 and impressions > 0
+ group by ad_date, campaign_id
+ ;
+ 
+select campaign_id, -- ROMI of campaigns with a total amount of spending of more than 500,000 
+ sum(spend) as all_spends,
+ sum(value)-sum (spend)  / sum(spend) as romi
+from facebook_ads_basic_daily fabd 
+group by campaign_id
+having sum(spend) > 0 and sum(spend) >= 500000
+order by romi desc 
+;
